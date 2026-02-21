@@ -20,9 +20,24 @@ const ProfilePage = (() => {
   const usernameStatusEl = document.getElementById('profile-username-status');
   const usernameHintEl = document.getElementById('profile-username-hint');
 
+  // Location DOM refs
+  const locationSearchInput = document.getElementById('location-search');
+  const locationAutocomplete = document.getElementById('location-autocomplete');
+  const btnFetchLocation = document.getElementById('btn-fetch-location');
+  const locationDisplayText = document.getElementById('location-display-text');
+  const profileMapEl = document.getElementById('profile-map');
+
   let checkTimeout = null;
   let originalUsername = '';
   let usernameValid = true;
+
+  // Location state
+  let profileMap = null;
+  let profileMarker = null;
+  let locationData = null;       // { lat, lon, name }
+  let originalLocation = null;   // saved location from DB
+  let locationSearchTimeout = null;
+  let mapInitialized = false;
 
   function init() {
     form.addEventListener('submit', onSave);
@@ -65,6 +80,27 @@ const ProfilePage = (() => {
       usernameStatusEl.className = 'input-status checking';
       checkTimeout = setTimeout(() => checkProfileUsername(val), 400);
     });
+
+    // ── Location handlers ──
+    btnFetchLocation.addEventListener('click', onFetchLocation);
+
+    locationSearchInput.addEventListener('input', () => {
+      const text = locationSearchInput.value.trim();
+      clearTimeout(locationSearchTimeout);
+      if (text.length < 2) {
+        locationAutocomplete.innerHTML = '';
+        locationAutocomplete.style.display = 'none';
+        return;
+      }
+      locationSearchTimeout = setTimeout(() => searchLocation(text), 300);
+    });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!locationSearchInput.contains(e.target) && !locationAutocomplete.contains(e.target)) {
+        locationAutocomplete.style.display = 'none';
+      }
+    });
   }
 
   async function checkProfileUsername(username) {
@@ -96,6 +132,14 @@ const ProfilePage = (() => {
     avatarError.textContent = '';
     mfaCard.innerHTML = '<p class="auth-subtitle">Loading…</p>';
 
+    // Initialize Leaflet map once
+    if (!mapInitialized) {
+      initLocationMap();
+      mapInitialized = true;
+    }
+    // Invalidate size after view is visible
+    setTimeout(() => { if (profileMap) profileMap.invalidateSize(); }, 100);
+
     try {
       const res = await Api.get('/me');
       const user = res.user;
@@ -103,6 +147,116 @@ const ProfilePage = (() => {
       loadMfa(user);
     } catch (err) {
       errorEl.textContent = err.message || 'Failed to load profile';
+    }
+  }
+
+  function initLocationMap() {
+    profileMap = L.map('profile-map', {
+      zoomControl: true,
+      attributionControl: false,
+    }).setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(profileMap);
+  }
+
+  // ── Location search (autocomplete via server proxy) ──
+
+  async function searchLocation(text) {
+    try {
+      const res = await Api.get(`/location/autocomplete?text=${encodeURIComponent(text)}`);
+      const results = res.results || [];
+      if (results.length === 0) {
+        locationAutocomplete.innerHTML = '<div class="location-result-item no-results">No results found</div>';
+        locationAutocomplete.style.display = 'block';
+        return;
+      }
+      locationAutocomplete.innerHTML = '';
+      results.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'location-result-item';
+        item.textContent = r.formatted;
+        item.addEventListener('click', () => {
+          selectLocation(r.lat, r.lon, r.formatted);
+          locationAutocomplete.style.display = 'none';
+          locationSearchInput.value = '';
+        });
+        locationAutocomplete.appendChild(item);
+      });
+      locationAutocomplete.style.display = 'block';
+    } catch {
+      locationAutocomplete.style.display = 'none';
+    }
+  }
+
+  function selectLocation(lat, lon, name) {
+    locationData = { lat, lon, name };
+    locationDisplayText.textContent = name;
+    locationDisplayText.classList.add('has-location');
+    updateMapMarker(lat, lon, name);
+  }
+
+  function updateMapMarker(lat, lon, name) {
+    if (!profileMap) return;
+    if (profileMarker) {
+      profileMap.removeLayer(profileMarker);
+    }
+    const icon = L.divIcon({
+      className: 'profile-map-pin',
+      html: '<div class="map-pin-dot"></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -12],
+    });
+    profileMarker = L.marker([lat, lon], { icon }).addTo(profileMap)
+      .bindPopup(`<b>${UI.escapeHtml(name)}</b>`).openPopup();
+    profileMap.setView([lat, lon], 13, { animate: true });
+  }
+
+  // ── Fetch current location via browser Geolocation API ──
+
+  async function onFetchLocation() {
+    if (!navigator.geolocation) {
+      UI.showToast('Geolocation is not supported by your browser');
+      return;
+    }
+
+    btnFetchLocation.disabled = true;
+    btnFetchLocation.textContent = '⏳ Fetching...';
+
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        });
+      });
+
+      const { latitude: lat, longitude: lon } = pos.coords;
+
+      // Reverse geocode via server proxy
+      const res = await Api.get(`/location/reverse?lat=${lat}&lon=${lon}`);
+      const loc = res.location;
+
+      if (loc) {
+        selectLocation(loc.lat, loc.lon, loc.formatted);
+        UI.showToast('Location fetched!');
+      } else {
+        // Fallback: use raw coords
+        selectLocation(lat, lon, `${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+        UI.showToast('Location set (could not resolve address)');
+      }
+    } catch (err) {
+      if (err.code === 1) {
+        UI.showToast('Location access denied. Please allow location in browser settings.');
+      } else {
+        UI.showToast('Could not fetch location. Try searching instead.');
+      }
+    } finally {
+      btnFetchLocation.disabled = false;
+      btnFetchLocation.textContent = '📍 Fetch My Location';
     }
   }
 
@@ -125,6 +279,25 @@ const ProfilePage = (() => {
     usernameHintEl.className = 'input-hint';
 
     renderAvatar(user);
+
+    // Populate location
+    if (user.location) {
+      locationData = { ...user.location };
+      originalLocation = { ...user.location };
+      locationDisplayText.textContent = user.location.name;
+      locationDisplayText.classList.add('has-location');
+      updateMapMarker(user.location.lat, user.location.lon, user.location.name);
+    } else {
+      locationData = null;
+      originalLocation = null;
+      locationDisplayText.textContent = 'No location set';
+      locationDisplayText.classList.remove('has-location');
+      if (profileMarker && profileMap) {
+        profileMap.removeLayer(profileMarker);
+        profileMarker = null;
+        profileMap.setView([20, 0], 2);
+      }
+    }
 
     statsGrid.innerHTML = `
       <div class="profile-stat-card">
@@ -185,6 +358,20 @@ const ProfilePage = (() => {
     if (username !== originalUsername) body.username = username;
     body.firstName = firstName || null;
     body.lastName = lastName || null;
+
+    // Include location if changed
+    if (locationData) {
+      const locChanged = !originalLocation ||
+        locationData.lat !== originalLocation.lat ||
+        locationData.lon !== originalLocation.lon ||
+        locationData.name !== originalLocation.name;
+      if (locChanged) {
+        body.location = locationData;
+      }
+    } else if (originalLocation) {
+      // User cleared their location
+      body.location = null;
+    }
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';

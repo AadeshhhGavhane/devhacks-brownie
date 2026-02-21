@@ -43,6 +43,7 @@ export function toPlayerInfo(player: Player, room: Room): PlayerInfo {
         hasGuessed: player.hasGuessed,
         canGuess: player.canGuess,
         avatar: player.avatar,
+        location: player.location,
     };
 }
 

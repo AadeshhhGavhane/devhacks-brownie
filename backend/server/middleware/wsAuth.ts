@@ -13,6 +13,7 @@ export interface WsAuthData {
     email: string;
     username: string;
     avatar: string | null;
+    location: { lat: number; lon: number; name: string } | null;
 }
 
 /**
@@ -63,6 +64,7 @@ export async function authenticateWs(req: Request): Promise<Omit<WsAuthData, "so
             email: user.email,
             username: user.username,
             avatar: user.avatar,
+            location: user.location || null,
         };
     } catch {
         return null;

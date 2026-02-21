@@ -102,7 +102,7 @@ const UI = (() => {
 
         let tags = '';
         if (player.isHost) tags += '<span class="player-tag host">Host</span>';
-        if (player.isDrawing) tags += '<span class="player-tag drawing">✏️ Drawing</span>';
+        if (player.isDrawing) tags += '<span class="player-tag drawing">✏️</span>';
         if (player.hasGuessed) tags += '<span class="player-tag guessed">✓</span>';
 
         // Use avatar image if available, otherwise initial
@@ -113,12 +113,20 @@ const UI = (() => {
             avatarHtml = `<div class="player-avatar ${avatarColor}">${initial}</div>`;
         }
 
+        const locationName = player.location ? player.location.name : '';
+
         li.innerHTML = `
       ${avatarHtml}
-      <span class="player-name">${escapeHtml(player.username)}</span>
+      <div class="player-info">
+        <span class="player-name">${escapeHtml(player.username)}</span>
+        ${locationName ? `<span class="player-location">\ud83d\udccd ${escapeHtml(locationName)}</span>` : ''}
+      </div>
       ${tags}
       <span class="player-score">${player.score}</span>
     `;
+        const tooltipParts = [player.username];
+        if (locationName) tooltipParts.push('\ud83d\udccd ' + locationName);
+        li.setAttribute('title', tooltipParts.join('\n'));
         return li;
     }
 

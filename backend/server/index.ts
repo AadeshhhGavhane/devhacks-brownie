@@ -42,6 +42,7 @@ async function start() {
                             email: authData.email,
                             username: authData.username,
                             avatar: authData.avatar,
+                            location: authData.location,
                         },
                     });
                     if (success) return undefined;
@@ -55,7 +56,7 @@ async function start() {
             // ---- WebSocket handlers ----
             websocket: {
                 open(ws) {
-                    const { socketId, authUserId, email, username, avatar } = ws.data;
+                    const { socketId, authUserId, email, username, avatar, location } = ws.data;
 
                     // Register socket
                     sockets.set(socketId, ws);
@@ -67,6 +68,7 @@ async function start() {
                         email,
                         username,
                         avatar,
+                        location,
                         roomId: null,
                         score: 0,
                         hasGuessed: false,

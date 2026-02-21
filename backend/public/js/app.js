@@ -18,6 +18,7 @@ const App = (() => {
   const btnCopyCode = document.getElementById('btn-copy-code');
   const btnLogout = document.getElementById('btn-logout');
   const btnProfile = document.getElementById('btn-profile');
+  const btnNearby = document.getElementById('btn-nearby');
   const lobbyRoomCode = document.getElementById('lobby-room-code');
   const lobbyPlayerList = document.getElementById('lobby-player-list');
   const playerCount = document.getElementById('player-count');
@@ -39,6 +40,7 @@ const App = (() => {
     VerifyEmailPage.init();
     ForgotPasswordPage.init();
     ProfilePage.init();
+    NearbyPage.init();
 
     setupUIHandlers();
 
@@ -231,6 +233,11 @@ const App = (() => {
     // Profile
     btnProfile.addEventListener('click', () => {
       ProfilePage.show();
+    });
+
+    // Nearby Players
+    btnNearby.addEventListener('click', () => {
+      NearbyPage.show();
     });
   }
 

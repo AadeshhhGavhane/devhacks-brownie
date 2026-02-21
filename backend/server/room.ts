@@ -157,7 +157,7 @@ export function leaveRoom(socketId: string): void {
     // Notify remaining players
     broadcastToRoom(roomId, {
         type: "player_left",
-        player: { socketId, username, score: 0, isHost: false, isDrawing: false, hasGuessed: false, canGuess: true, avatar: null },
+        player: { socketId, username, score: 0, isHost: false, isDrawing: false, hasGuessed: false, canGuess: true, avatar: null, location: null },
         newHost,
     });
 

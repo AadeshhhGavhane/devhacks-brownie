@@ -55,6 +55,14 @@ const profileSchema = z.object({
         .transform(normalizePhone)
         .optional()
         .nullable(),
+    location: z
+        .object({
+            lat: z.number(),
+            lon: z.number(),
+            name: z.string().min(1).max(200),
+        })
+        .nullable()
+        .optional(),
 });
 
 // ───── PATCH /profile ─────
@@ -76,7 +84,7 @@ router.patch("/", async (req: Request, res: Response) => {
             return;
         }
 
-        const { username, firstName, lastName, phone } = parsed.data;
+        const { username, firstName, lastName, phone, location } = parsed.data;
 
         if (username !== undefined && username !== user.username) {
             const existing = await User.findOne({ username });
@@ -90,6 +98,7 @@ router.patch("/", async (req: Request, res: Response) => {
         if (firstName !== undefined) user.firstName = firstName;
         if (lastName !== undefined) user.lastName = lastName;
         if (phone !== undefined) user.phone = phone;
+        if (location !== undefined) user.location = location;
 
         await user.save();
 

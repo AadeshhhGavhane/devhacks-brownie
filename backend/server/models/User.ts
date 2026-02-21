@@ -21,6 +21,11 @@ export interface IUser extends Document {
     gamesPlayed: number;
     gamesWon: number;
     totalScore: number;
+    location: {
+        lat: number;
+        lon: number;
+        name: string;
+    } | null;
     createdAt: Date;
 }
 
@@ -99,6 +104,15 @@ const userSchema = new Schema<IUser>(
         totalScore: {
             type: Number,
             default: 0,
+        },
+        location: {
+            type: {
+                lat: { type: Number, required: true },
+                lon: { type: Number, required: true },
+                name: { type: String, required: true },
+            },
+            default: null,
+            _id: false,
         },
     },
     {

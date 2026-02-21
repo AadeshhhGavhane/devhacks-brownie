@@ -8,6 +8,7 @@ export interface Player {
     email: string;
     username: string;          // display name from profile
     avatar: string | null;
+    location: { lat: number; lon: number; name: string } | null;
     roomId: string | null;
     score: number;
     hasGuessed: boolean;
@@ -99,6 +100,7 @@ export interface PlayerInfo {
     hasGuessed: boolean;
     canGuess: boolean;
     avatar: string | null;
+    location: { lat: number; lon: number; name: string } | null;
 }
 
 export interface LeaderboardEntry {

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -242,6 +243,22 @@
             <span class="auth-error" id="profile-error"></span>
             <button type="submit" class="btn btn-primary profile-save-btn" id="profile-save-btn">Save Changes</button>
           </form>
+
+          <!-- Location Section -->
+          <div class="profile-location-section">
+            <h3 class="profile-section-title">📍 Your Location</h3>
+            <div class="location-controls">
+              <div class="location-search-wrapper">
+                <input type="text" id="location-search" placeholder="Search for a location..." autocomplete="off" spellcheck="false">
+                <div class="location-autocomplete-results" id="location-autocomplete"></div>
+              </div>
+              <button type="button" class="btn btn-outline btn-small btn-fetch-location" id="btn-fetch-location">📍 Fetch My Location</button>
+            </div>
+            <div class="location-display" id="location-display">
+              <span class="location-display-text" id="location-display-text">No location set</span>
+            </div>
+            <div id="profile-map" class="profile-map-container"></div>
+          </div>
         </div>
 
         <!-- Right: Security / MFA -->
@@ -284,12 +301,37 @@
         </div>
         <div class="landing-bottom-actions">
           <button id="btn-profile" class="btn btn-outline btn-small">👤 Profile</button>
+          <button id="btn-nearby" class="btn btn-outline btn-small">🗺️ Nearby Players</button>
           <button id="btn-logout" class="btn btn-danger btn-small">Logout</button>
         </div>
       </div>
       <div class="connection-status" id="connection-status">
         <span class="status-dot"></span>
         <span class="status-text">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== NEARBY PLAYERS VIEW ========== -->
+  <div id="view-nearby" class="view">
+    <div class="nearby-page">
+      <div class="nearby-header">
+        <a href="#" id="link-back-from-nearby" class="profile-back-link">← Back to Game</a>
+        <div class="profile-header-title">
+          <h1>🎨 Scribble</h1>
+          <span class="profile-header-sep">—</span>
+          <span class="profile-header-subtitle">🗺️ Nearby Players</span>
+        </div>
+        <div class="profile-header-spacer"></div>
+      </div>
+      <div class="nearby-body">
+        <div class="nearby-map-wrapper">
+          <div id="nearby-map"></div>
+          <div class="nearby-legend glass-card">
+            <span class="nearby-legend-you">🟣 You</span>
+            <span class="nearby-legend-others">🟢 Others</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -340,6 +382,7 @@
             <div class="timer-bar" id="timer-bar"></div>
           </div>
         </div>
+        <button id="btn-leave-game" class="btn-leave-game" title="Leave Game">🚪</button>
       </div>
 
       <!-- Main Area -->
@@ -419,6 +462,8 @@
   <script src="/js/pages/verify-email.js"></script>
   <script src="/js/pages/forgot-password.js"></script>
   <script src="/js/pages/profile.js"></script>
+  <script src="/js/pages/nearby.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>

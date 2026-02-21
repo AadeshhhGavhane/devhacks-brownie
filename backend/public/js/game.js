@@ -208,5 +208,12 @@ const Game = (() => {
         Chat.clearMessages();
     }
 
+    // In-game leave button
+    document.getElementById('btn-leave-game')?.addEventListener('click', () => {
+        if (confirm('Are you sure you want to leave the game?')) {
+            leaveGame();
+        }
+    });
+
     return { init, pickWord, playAgain, leaveGame, updateGamePlayerList };
 })();
