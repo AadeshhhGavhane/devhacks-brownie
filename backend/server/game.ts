@@ -14,7 +14,9 @@ import words from "./words.json";
 
 // ---- Start Game ----
 
-export function startGame(socketId: string, room: Room): void {
+const CREDIT_COST_PER_GAME = 100;
+
+export async function startGame(socketId: string, room: Room): Promise<void> {
     if (room.hostId !== socketId) {
         sendTo(socketId, { type: "room_error", message: "Only the host can start the game" });
         return;
@@ -30,8 +32,41 @@ export function startGame(socketId: string, room: Room): void {
         return;
     }
 
-    // Reset all player scores
+    // ---- Credit check & deduction ----
     const playersInRoom = getPlayersInRoom(room.roomId);
+    const authUserIds = playersInRoom.map(p => p.authUserId);
+
+    // Find players who don't have enough credits
+    const poorPlayers = await User.find(
+        { _id: { $in: authUserIds }, credits: { $lt: CREDIT_COST_PER_GAME } }
+    ).select("username credits");
+
+    if (poorPlayers.length > 0) {
+        const names = poorPlayers.map(u => u.username).join(", ");
+        broadcastToRoom(room.roomId, {
+            type: "room_error",
+            message: `Not enough credits! ${names} need${poorPlayers.length === 1 ? "s" : ""} at least ${CREDIT_COST_PER_GAME} credits.`,
+        });
+        return;
+    }
+
+    // Atomically deduct credits from all players
+    await User.updateMany(
+        { _id: { $in: authUserIds } },
+        { $inc: { credits: -CREDIT_COST_PER_GAME } }
+    );
+
+    // Notify all players of deduction
+    for (const p of playersInRoom) {
+        const updatedUser = await User.findById(p.authUserId).select("credits");
+        sendTo(p.socketId, {
+            type: "credits_deducted",
+            cost: CREDIT_COST_PER_GAME,
+            remaining: updatedUser?.credits ?? 0,
+        });
+    }
+
+    // Reset all player scores
     for (const p of playersInRoom) {
         p.score = 0;
         p.hasGuessed = false;
@@ -420,14 +455,44 @@ async function persistGameHistory(
 
 // ---- Play Again ----
 
-export function handlePlayAgain(socketId: string, room: Room): void {
+export async function handlePlayAgain(socketId: string, room: Room): Promise<void> {
     if (room.hostId !== socketId) {
         sendTo(socketId, { type: "room_error", message: "Only the host can restart" });
         return;
     }
 
-    // Reset everything
+    // ---- Credit check & deduction ----
     const playersInRoom = getPlayersInRoom(room.roomId);
+    const authUserIds = playersInRoom.map(p => p.authUserId);
+
+    const poorPlayers = await User.find(
+        { _id: { $in: authUserIds }, credits: { $lt: CREDIT_COST_PER_GAME } }
+    ).select("username credits");
+
+    if (poorPlayers.length > 0) {
+        const names = poorPlayers.map(u => u.username).join(", ");
+        broadcastToRoom(room.roomId, {
+            type: "room_error",
+            message: `Not enough credits! ${names} need${poorPlayers.length === 1 ? "s" : ""} at least ${CREDIT_COST_PER_GAME} credits.`,
+        });
+        return;
+    }
+
+    await User.updateMany(
+        { _id: { $in: authUserIds } },
+        { $inc: { credits: -CREDIT_COST_PER_GAME } }
+    );
+
+    for (const p of playersInRoom) {
+        const updatedUser = await User.findById(p.authUserId).select("credits");
+        sendTo(p.socketId, {
+            type: "credits_deducted",
+            cost: CREDIT_COST_PER_GAME,
+            remaining: updatedUser?.credits ?? 0,
+        });
+    }
+
+    // Reset everything
     for (const p of playersInRoom) {
         p.score = 0;
         p.hasGuessed = false;

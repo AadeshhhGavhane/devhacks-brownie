@@ -9,10 +9,10 @@ import { getPlayer, getRoom, broadcastToRoom, sendTo } from "./state";
 import { createRoom, joinRoom, leaveRoom } from "./room";
 import { startGame, selectWord, handleGuess, handlePlayAgain } from "./game";
 
-export function handleMessage(
+export async function handleMessage(
     ws: ServerWebSocket<WsAuthData>,
     raw: string
-): void {
+): Promise<void> {
     const socketId = ws.data.socketId;
 
     let msg: ClientMessage;
@@ -40,7 +40,7 @@ export function handleMessage(
             if (!player?.roomId) return;
             const room = getRoom(player.roomId);
             if (!room) return;
-            startGame(socketId, room);
+            await startGame(socketId, room);
             break;
         }
 
@@ -88,7 +88,7 @@ export function handleMessage(
             if (!player?.roomId) return;
             const room = getRoom(player.roomId);
             if (!room) return;
-            handlePlayAgain(socketId, room);
+            await handlePlayAgain(socketId, room);
             break;
         }
     }

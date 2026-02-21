@@ -148,7 +148,7 @@ router.post("/register", async (req: Request, res: Response) => {
         }
 
         const passwordHash = await bcrypt.hash(password, 12);
-        const user = await User.create({ email, username, passwordHash, emailVerified: false });
+        const user = await User.create({ email, username, passwordHash, emailVerified: false, credits: 500 });
 
         const otpCode = await createOtp(user._id.toString(), "email-verify");
         await sendOtpEmail(email, otpCode, "email-verify");

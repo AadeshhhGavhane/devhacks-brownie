@@ -26,6 +26,14 @@ const envSchema = z.object({
 
     // Geoapify (Maps / Geocoding)
     GEOAPIFY_KEY: z.string().min(1),
+
+    // PhonePe Payment Gateway
+    PHONEPE_CLIENT_ID: z.string().min(1),
+    PHONEPE_CLIENT_SECRET: z.string().min(1),
+    PHONEPE_CLIENT_VERSION: z.string().default("1"),
+    PHONEPE_BASE_URL: z.string().url(),
+    PHONEPE_WEBHOOK_USERNAME: z.string().min(1),
+    PHONEPE_WEBHOOK_PASSWORD: z.string().min(1),
 });
 
 function loadEnv() {

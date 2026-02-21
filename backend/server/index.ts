@@ -43,6 +43,7 @@ async function start() {
                             username: authData.username,
                             avatar: authData.avatar,
                             location: authData.location,
+                            credits: authData.credits,
                         },
                     });
                     if (success) return undefined;
@@ -56,7 +57,7 @@ async function start() {
             // ---- WebSocket handlers ----
             websocket: {
                 open(ws) {
-                    const { socketId, authUserId, email, username, avatar, location } = ws.data;
+                    const { socketId, authUserId, email, username, avatar, location, credits } = ws.data;
 
                     // Register socket
                     sockets.set(socketId, ws);
@@ -84,6 +85,7 @@ async function start() {
                         socketId,
                         username,
                         avatar,
+                        credits,
                     });
 
                     console.log(`[+] Player connected: ${username} (${socketId}) [${players.size} online]`);

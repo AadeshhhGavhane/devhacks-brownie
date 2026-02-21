@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth";
 import mfaRoutes from "./routes/mfa";
 import profileRoutes from "./routes/profile";
 import locationRoutes from "./routes/location";
+import creditsRoutes from "./routes/credits";
 import { meRouter, sessionsRouter } from "./routes/sessions";
 import { join } from "path";
 
@@ -27,7 +28,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://*.tile.openstreetmap.org", "https://maps.geoapify.com"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "https://unpkg.com"],
         },
     },
 }));
@@ -47,6 +48,7 @@ app.use("/auth", authRoutes);
 app.use("/mfa", mfaRoutes);
 app.use("/profile", profileRoutes);
 app.use("/location", locationRoutes);
+app.use("/credits", creditsRoutes);
 app.use("/me", meRouter);
 app.use("/sessions", sessionsRouter);
 
@@ -57,7 +59,7 @@ app.use(express.static(PUBLIC_DIR));
 
 // SPA fallback — serve index.html for any non-API route
 app.get("*", (req, res) => {
-    const apiPrefixes = ["/auth", "/mfa", "/profile", "/location", "/sessions", "/me", "/ws"];
+    const apiPrefixes = ["/auth", "/mfa", "/profile", "/location", "/credits", "/sessions", "/me", "/ws"];
     if (apiPrefixes.some((p) => req.path.startsWith(p))) {
         res.status(404).json({ error: "Not found" });
         return;

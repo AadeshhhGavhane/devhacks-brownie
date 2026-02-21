@@ -18,6 +18,7 @@ export interface IUser extends Document {
     mfaEnabled: boolean;
     mfaSecret: string | null;
     mfaTempSecret: string | null;
+    credits: number;
     gamesPlayed: number;
     gamesWon: number;
     totalScore: number;
@@ -92,6 +93,10 @@ const userSchema = new Schema<IUser>(
         mfaTempSecret: {
             type: String,
             default: null,
+        },
+        credits: {
+            type: Number,
+            default: 0,
         },
         gamesPlayed: {
             type: Number,

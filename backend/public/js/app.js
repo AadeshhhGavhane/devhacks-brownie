@@ -19,6 +19,7 @@ const App = (() => {
   const btnLogout = document.getElementById('btn-logout');
   const btnProfile = document.getElementById('btn-profile');
   const btnNearby = document.getElementById('btn-nearby');
+  const btnCredits = document.getElementById('btn-credits');
   const lobbyRoomCode = document.getElementById('lobby-room-code');
   const lobbyPlayerList = document.getElementById('lobby-player-list');
   const playerCount = document.getElementById('player-count');
@@ -41,6 +42,7 @@ const App = (() => {
     ForgotPasswordPage.init();
     ProfilePage.init();
     NearbyPage.init();
+    CreditsPage.init();
 
     setupUIHandlers();
 
@@ -95,6 +97,7 @@ const App = (() => {
 
     // Stats
     userStats.innerHTML = `
+      <span>💰 ${currentUser.credits ?? 0} credits</span>
       <span>🎮 ${currentUser.gamesPlayed || 0} games</span>
       <span>🏆 ${currentUser.gamesWon || 0} wins</span>
       <span>⭐ ${currentUser.totalScore || 0} pts</span>
@@ -104,6 +107,14 @@ const App = (() => {
     btnJoin.disabled = false;
 
     UI.showView('landing');
+
+    // Check for payment redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('credits') === 'success') {
+      UI.showToast('✅ Credits added to your account!');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
 
     // Connect WebSocket (uses cookies automatically)
     Socket.connect();
@@ -119,6 +130,10 @@ const App = (() => {
     Socket.on('connected', (msg) => {
       Socket.setSocketId(msg.socketId);
       UI.setConnectionStatus('connected');
+      // Update credits from server
+      if (msg.credits !== undefined && currentUser) {
+        currentUser.credits = msg.credits;
+      }
     });
 
     Socket.on('room_created', (msg) => {
@@ -170,6 +185,14 @@ const App = (() => {
 
     Socket.on('game_starting', () => {
       Game.updateGamePlayerList(players);
+    });
+
+    Socket.on('credits_deducted', (msg) => {
+      if (currentUser) {
+        currentUser.credits = msg.remaining;
+      }
+      UI.showToast(`💰 ${msg.cost} credits deducted • ${msg.remaining} remaining`);
+      CreditsPage.updateBalance(msg.remaining);
     });
   }
 
@@ -239,6 +262,13 @@ const App = (() => {
     btnNearby.addEventListener('click', () => {
       NearbyPage.show();
     });
+
+    // Credits
+    if (btnCredits) {
+      btnCredits.addEventListener('click', () => {
+        CreditsPage.show();
+      });
+    }
   }
 
   // ---- Lobby ----
@@ -288,6 +318,7 @@ const App = (() => {
         userAvatarDisplay.classList.remove('has-img');
       }
       userStats.innerHTML = `
+        <span>💰 ${currentUser.credits ?? 0} credits</span>
         <span>🎮 ${currentUser.gamesPlayed || 0} games</span>
         <span>🏆 ${currentUser.gamesWon || 0} wins</span>
         <span>⭐ ${currentUser.totalScore || 0} pts</span>
