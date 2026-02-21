@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scribble — Draw & Guess!</title>
+  <meta name="description" content="Real-time multiplayer drawing and guessing game. Create a room, invite friends, and have fun!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- ========== LANDING VIEW ========== -->
+  <div id="view-landing" class="view active">
+    <div class="landing-container">
+      <div class="landing-logo">
+        <h1>🎨 Scribble</h1>
+        <p class="tagline">Draw, Guess & Have Fun!</p>
+      </div>
+      <div class="landing-card glass-card">
+        <div class="input-group">
+          <label for="username-input">Your Name</label>
+          <input type="text" id="username-input" placeholder="Enter a cool nickname..." maxlength="16" autocomplete="off" spellcheck="false">
+          <span class="input-hint" id="username-error"></span>
+        </div>
+        <div class="landing-actions">
+          <button id="btn-create-room" class="btn btn-primary" disabled>
+            <span class="btn-icon">✨</span> Create Room
+          </button>
+          <div class="divider"><span>or</span></div>
+          <div class="join-row">
+            <input type="text" id="room-code-input" placeholder="Room Code" maxlength="6" autocomplete="off" spellcheck="false" class="room-code-field">
+            <button id="btn-join-room" class="btn btn-secondary" disabled>
+              Join
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="connection-status" id="connection-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LOBBY VIEW ========== -->
+  <div id="view-lobby" class="view">
+    <div class="lobby-container">
+      <div class="lobby-header">
+        <h2>🏠 Room Lobby</h2>
+        <div class="room-code-display">
+          <span>Room Code:</span>
+          <span class="code" id="lobby-room-code">------</span>
+          <button class="btn-icon-only" id="btn-copy-code" title="Copy code">📋</button>
+        </div>
+      </div>
+      <div class="lobby-card glass-card">
+        <h3>Players <span id="player-count" class="badge">0</span></h3>
+        <ul id="lobby-player-list" class="player-list"></ul>
+        <div class="lobby-actions">
+          <button id="btn-start-game" class="btn btn-primary" style="display:none;">
+            <span class="btn-icon">🎮</span> Start Game
+          </button>
+          <p id="lobby-waiting-text" class="muted-text">Waiting for host to start...</p>
+          <button id="btn-leave-room" class="btn btn-danger">
+            Leave Room
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== GAME VIEW ========== -->
+  <div id="view-game" class="view">
+    <div class="game-layout">
+      <!-- Top Bar -->
+      <div class="game-top-bar">
+        <div class="round-info">
+          <span id="game-round">Round 1</span>
+          <span class="dot-sep">•</span>
+          <span id="game-turn">Turn 1</span>
+        </div>
+        <div class="word-display" id="word-display">
+          <span id="word-text">Waiting...</span>
+        </div>
+        <div class="timer-area">
+          <span id="timer-text" class="timer-text">60</span>
+          <div class="timer-bar-container">
+            <div class="timer-bar" id="timer-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Area -->
+      <div class="game-main">
+        <!-- Player Sidebar -->
+        <div class="player-sidebar glass-card">
+          <h4>Players</h4>
+          <ul id="game-player-list" class="player-list compact"></ul>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-area">
+          <canvas id="drawing-canvas" width="800" height="540"></canvas>
+          <!-- Drawing Tools -->
+          <div class="drawing-tools" id="drawing-tools" style="display:none;">
+            <div class="color-palette" id="color-palette">
+              <div class="color-swatch active" data-color="#000000" style="background:#000000"></div>
+              <div class="color-swatch" data-color="#FFFFFF" style="background:#FFFFFF; border:1px solid #555"></div>
+              <div class="color-swatch" data-color="#EF4444" style="background:#EF4444"></div>
+              <div class="color-swatch" data-color="#F97316" style="background:#F97316"></div>
+              <div class="color-swatch" data-color="#EAB308" style="background:#EAB308"></div>
+              <div class="color-swatch" data-color="#22C55E" style="background:#22C55E"></div>
+              <div class="color-swatch" data-color="#06B6D4" style="background:#06B6D4"></div>
+              <div class="color-swatch" data-color="#3B82F6" style="background:#3B82F6"></div>
+              <div class="color-swatch" data-color="#8B5CF6" style="background:#8B5CF6"></div>
+              <div class="color-swatch" data-color="#EC4899" style="background:#EC4899"></div>
+              <div class="color-swatch" data-color="#78716C" style="background:#78716C"></div>
+              <div class="color-swatch" data-color="#92400E" style="background:#92400E"></div>
+            </div>
+            <div class="stroke-controls">
+              <button class="stroke-btn" data-width="3" title="Thin">
+                <span class="stroke-preview" style="width:6px;height:6px"></span>
+              </button>
+              <button class="stroke-btn active" data-width="6" title="Medium">
+                <span class="stroke-preview" style="width:10px;height:10px"></span>
+              </button>
+              <button class="stroke-btn" data-width="12" title="Thick">
+                <span class="stroke-preview" style="width:16px;height:16px"></span>
+              </button>
+            </div>
+            <button class="btn btn-small btn-outline" id="btn-clear-canvas">🗑️ Clear</button>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area glass-card">
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type your guess..." autocomplete="off" spellcheck="false">
+            <button id="btn-send-chat" class="btn btn-primary btn-small">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODALS ========== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content glass-card" id="modal-content">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+
+  <!-- ========== TOAST ========== -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/js/ui.js"></script>
+  <script src="/js/socket.js"></script>
+  <script src="/js/canvas.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/game.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
